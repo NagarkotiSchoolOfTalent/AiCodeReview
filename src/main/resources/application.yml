@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: claude-code-review
+  # Disable web server - this is a CLI/batch app, not a web server
+  main:
+    web-application-type: none
+
+review:
+  # Anthropic API credentials
+  anthropic-api-key: ${ANTHROPIC_API_KEY}
+
+  # GitHub credentials and PR context (all set by GitHub Actions)
+  github-token: ${GITHUB_TOKEN}
+  pr-number: ${PR_NUMBER}
+  repo: ${REPO}
+  base-sha: ${BASE_SHA}
+  head-sha: ${HEAD_SHA}
+  pr-title: ${PR_TITLE:Untitled PR}
+  pr-author: ${PR_AUTHOR:unknown}
+
+  # Claude model configuration
+  # Options: claude-opus-4-5 (best quality), claude-sonnet-4-5 (faster/cheaper)
+  claude-model: ${CLAUDE_MODEL:claude-opus-4-5}
+  max-tokens: 4096
+
+  # Diff size limit — diffs larger than this are truncated before sending to Claude
+  max-diff-chars: 60000
+
+logging:
+  level:
+    com.yourcompany.codereview: INFO
+    org.springframework.web.client: WARN
+  pattern:
+    console: "%d{HH:mm:ss} [%level] %logger{36} - %msg%n"
