@@ -38,5 +38,9 @@ public class AppConfig implements ApplicationRunner {
             log.info("=== Review completed successfully ===");
             System.exit(0);
         } 
+         catch (Exception e) {
+    log.error("=== Review failed: {} ===", e.getMessage(), e);
+    return e.getMessage(); // Exit with an error status
+}
     }
 }
