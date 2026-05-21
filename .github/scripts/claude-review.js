@@ -167,19 +167,20 @@ Please review this pull request diff and provide detailed feedback.`;
 
     // Validate response structure
     if (!response || !response.choices || response.choices.length === 0) {
-      throw new Error("Empty response from OpenAI API");
+       throw new Error(`Invalid OpenAI response structure: ${JSON.stringify(response)}`);
     }
 
-    const textContent = response.choices[0].message.content;
-    if (!textContent) {
-      throw new Error("No text content in OpenAI response");
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error(`No content in OpenAI response: ${JSON.stringify(response.choices[0])}`);
     }
 
-    return textContent;
+    return content;
   } catch (error) {
     console.error("OpenAI API Error:", error.message);
     if (error.status) {
-      console.error("Response status:", error.status);
+      // OpenAI API error
+      throw new Error(`OpenAI API error (${error.status}): ${error.message}`);
     }
     throw error;
   }
@@ -225,5 +226,6 @@ ${reviewText}
 
 main().catch((err) => {
   console.error("❌ Review failed:", err.message);
+  console.error("Stack trace:", err.stack);
   process.exit(1);
 });
