@@ -145,7 +145,14 @@ Format your response with these sections:
 If a section has no items, omit it entirely.`;
 
 async function reviewWithOpenAI(diff, prTitle, prAuthor) {
-  const client = new OpenAI({ apiKey: ANTHROPIC_API_KEY });
+    if (!ANTHROPIC_API_KEY) {
+    throw new Error("ANTHROPIC_API_KEY environment variable is not set");
+  }
+
+  const client = new OpenAI({ 
+    apiKey: ANTHROPIC_API_KEY,
+    timeout: 60000, // 60 second timeout
+  });
 
   const userMessage = `PR: "${prTitle}" by @${prAuthor}
 
@@ -154,7 +161,9 @@ ${diff}
 \`\`\`
 
 Please review this pull request diff and provide detailed feedback.`;
-
+  console.log("📡 Sending request to OpenAI API...");
+  console.log(`   Model: gpt-4o-mini`);
+  console.log(`   Diff length: ${diff.length} characters`);
   try {
     const response = await client.chat.completions.create({
       model: "gpt-4o-mini",
@@ -166,21 +175,44 @@ Please review this pull request diff and provide detailed feedback.`;
     });
 
     // Validate response structure
-    if (!response || !response.choices || response.choices.length === 0) {
-       throw new Error(`Invalid OpenAI response structure: ${JSON.stringify(response)}`);
+        console.log("✓ Received response from OpenAI");
+
+    // Validate response structure
+    if (!response) {
+      throw new Error("Response object is null or undefined");
     }
 
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error(`No content in OpenAI response: ${JSON.stringify(response.choices[0])}`);
+    if (!Array.isArray(response.choices) || response.choices.length === 0) {
+      console.error("Invalid choices array:", JSON.stringify(response, null, 2));
+      throw new Error(`No choices in response. Response: ${JSON.stringify(response)}`);
     }
 
+    const choice = response.choices[0];
+    if (!choice.message) {
+      console.error("No message in choice:", JSON.stringify(choice, null, 2));
+      throw new Error(`No message in first choice: ${JSON.stringify(choice)}`);
+    }
+
+    const content = choice.message.content;
+    if (!content || typeof content !== 'string') {
+      console.error("Invalid content:", JSON.stringify(choice.message, null, 2));
+      throw new Error(`No text content in message: ${JSON.stringify(choice.message)}`);
+    }
+
+    console.log(`✓ Got review content (${content.length} characters)`);
     return content;
+
   } catch (error) {
-    console.error("OpenAI API Error:", error.message);
+    console.error("🔴 OpenAI API Error");
+    console.error(`   Error type: ${error.constructor.name}`);
+    console.error(`   Message: ${error.message}`);
+    
     if (error.status) {
-      // OpenAI API error
-      throw new Error(`OpenAI API error (${error.status}): ${error.message}`);
+      console.error(`   Status code: ${error.status}`);
+    }
+    if (error.response) {
+      console.error(`   Response status: ${error.response.status}`);
+      console.error(`   Response body: ${JSON.stringify(error.response, null, 2)}`);
     }
     throw error;
   }
@@ -189,7 +221,7 @@ Please review this pull request diff and provide detailed feedback.`;
 // ─── Main ───────────────────────────────────────────────────────────
 
 async function main() {
-  console.log(`🤖 Starting code review for PR #${PR_NUMBER} in ${REPO}`);
+  console.log(`🤖 Starting Open Ai code review for PR #${PR_NUMBER} in ${REPO}`);
 
   // Fetch and filter diff
   console.log("📄 Fetching diff...");
