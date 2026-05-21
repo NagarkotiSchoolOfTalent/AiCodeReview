@@ -1,6 +1,6 @@
 const OpenAI = require("openai");
 
-const OPENAI_API_KEY = process.env.ANTHROPIC_API_KEY; // Using the same secret name for compatibility
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const PR_NUMBER = process.env.PR_NUMBER;
 const REPO = process.env.REPO; // e.g. "owner/repo"
@@ -105,7 +105,7 @@ function filterDiff(raw) {
     : joined;
 }
 
-// ─── OpenAI review ────────────────────────────────────────────────────────
+// ─── Claude review ────────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `You are an expert senior software engineer performing a thorough code review.
 Your goal is to help the developer improve their code by identifying real issues with clear, actionable explanations.
@@ -145,7 +145,7 @@ Format your response with these sections:
 If a section has no items, omit it entirely.`;
 
 async function reviewWithOpenAI(diff, prTitle, prAuthor) {
-  const client = new OpenAI({ apiKey: OPENAI_API_KEY });
+  const client = new OpenAI({ apiKey: ANTHROPIC_API_KEY });
 
   const userMessage = `PR: "${prTitle}" by @${prAuthor}
 
