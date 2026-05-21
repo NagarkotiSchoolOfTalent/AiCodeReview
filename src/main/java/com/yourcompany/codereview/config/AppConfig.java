@@ -1,6 +1,6 @@
 package com.yourcompany.codereview.config;
 
-import com.yourcompany.codereview.service.CodeReviewOrchestrator;
+import com.yourcompany.codereview.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -8,6 +8,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Duration;
@@ -17,7 +18,7 @@ import java.time.Duration;
  * Registers RestTemplate and triggers the review pipeline on startup.
  */
 @Slf4j
-@Configuration
+@Component
 @RequiredArgsConstructor
 public class AppConfig implements ApplicationRunner {
 
@@ -26,13 +27,13 @@ public class AppConfig implements ApplicationRunner {
     /**
      * RestTemplate with sensible timeouts for GitHub and Anthropic API calls.
      */
-    @Bean
+    /*@Bean
     public RestTemplate restTemplate(RestTemplateBuilder builder) {
         return builder
                 .setConnectTimeout(Duration.ofSeconds(10))
                 .setReadTimeout(Duration.ofSeconds(90))
                 .build();
-    }
+    }*/
 
     /**
      * Triggered automatically when the Spring Boot app starts.
