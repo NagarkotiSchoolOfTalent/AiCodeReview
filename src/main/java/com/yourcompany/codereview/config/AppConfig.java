@@ -1,17 +1,11 @@
 package com.yourcompany.codereview.config;
 
-import com.yourcompany.codereview.service.*;
+import com.yourcompany.codereview.service.CodeReviewOrchestrator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
-
-import java.time.Duration;
 
 /**
  * Application configuration.
