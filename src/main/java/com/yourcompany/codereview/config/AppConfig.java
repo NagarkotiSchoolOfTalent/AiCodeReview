@@ -29,9 +29,6 @@ public class AppConfig implements ApplicationRunner {
                 .build();
     }*/
 
-    /**
-     * Triggered automatically when the Spring Boot app starts.
-     * Runs the review pipeline and exits cleanly.
      */
     @Override
     public void run(ApplicationArguments args) {
@@ -40,9 +37,6 @@ public class AppConfig implements ApplicationRunner {
             orchestrator.runReview();
             log.info("=== Review completed successfully ===");
             System.exit(0);
-        } catch (Exception e) {
-            log.error("=== Review failed: {} ===", e.getMessage(), e);
-            System.exit(1);
-        }
+        } 
     }
 }
