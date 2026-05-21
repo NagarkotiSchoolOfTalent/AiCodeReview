@@ -158,8 +158,10 @@ Please review this pull request diff and provide detailed feedback.`;
   const response = await client.chat.completions.create({
     model: "gpt-4o-mini",
     max_tokens: 4096,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: userMessage }],
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: userMessage }
+    ],
   });
 
   return response.choices[0].message.content;
