@@ -13,10 +13,10 @@ import org.springframework.web.client.RestTemplate;
 
 /**
  * Handles all communication with the GitHub REST API:
- *   - Fetching the PR diff
- *   - Listing existing PR comments
- *   - Deleting old bot review comments
- *   - Posting the new review comment
+ * - Fetching the PR diff
+ * - Listing existing PR comments
+ * - Deleting old bot review comments
+ * - Posting the new review comment
  */
 @Slf4j
 @Service
