@@ -1,6 +1,6 @@
 const OpenAI = require("openai");
 
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const OPENAI_API_KEY = process.env.ANTHROPIC_API_KEY; // Using the same secret name for compatibility
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const PR_NUMBER = process.env.PR_NUMBER;
 const REPO = process.env.REPO; // e.g. "owner/repo"
@@ -105,7 +105,7 @@ function filterDiff(raw) {
     : joined;
 }
 
-// ─── Claude review ────────────────────────────────────────────────────────
+// ─── OpenAI review ────────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `You are an expert senior software engineer performing a thorough code review.
 Your goal is to help the developer improve their code by identifying real issues with clear, actionable explanations.
@@ -145,7 +145,7 @@ Format your response with these sections:
 If a section has no items, omit it entirely.`;
 
 async function reviewWithOpenAI(diff, prTitle, prAuthor) {
-  const client = new OpenAI({ apiKey: ANTHROPIC_API_KEY });
+  const client = new OpenAI({ apiKey: OPENAI_API_KEY });
 
   const userMessage = `PR: "${prTitle}" by @${prAuthor}
 
@@ -155,22 +155,40 @@ ${diff}
 
 Please review this pull request diff and provide detailed feedback.`;
 
-  const response = await client.chat.completions.create({
-    model: "gpt-4o-mini",
-    max_tokens: 4096,
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: userMessage }
-    ],
-  });
+  try {
+    const response = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      max_tokens: 4096,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userMessage }
+      ],
+    });
 
-  return response.choices[0].message.content;
+    // Validate response structure
+    if (!response || !response.choices || response.choices.length === 0) {
+      throw new Error("Empty response from OpenAI API");
+    }
+
+    const textContent = response.choices[0].message.content;
+    if (!textContent) {
+      throw new Error("No text content in OpenAI response");
+    }
+
+    return textContent;
+  } catch (error) {
+    console.error("OpenAI API Error:", error.message);
+    if (error.status) {
+      console.error("Response status:", error.status);
+    }
+    throw error;
+  }
 }
 
 // ─── Main ───────────────────────────────────────────────────────────
 
 async function main() {
-  console.log(`🤖 Starting Claude review for PR #${PR_NUMBER} in ${REPO}`);
+  console.log(`🤖 Starting code review for PR #${PR_NUMBER} in ${REPO}`);
 
   // Fetch and filter diff
   console.log("📄 Fetching diff...");
