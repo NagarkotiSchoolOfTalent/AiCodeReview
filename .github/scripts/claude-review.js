@@ -1,9 +1,4 @@
-/**
- * Claude AI Code Review Script
- * Fetches PR diff, sends to Claude, posts review as GitHub PR comment.
- */
-
-const Anthropic = require("openai");
+const OpenAI = require("openai");
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
@@ -110,7 +105,7 @@ function filterDiff(raw) {
     : joined;
 }
 
-// ─── Claude review ─────────────────────────────────────────────────────────
+// ─── Claude review ────────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `You are an expert senior software engineer performing a thorough code review.
 Your goal is to help the developer improve their code by identifying real issues with clear, actionable explanations.
@@ -149,8 +144,8 @@ Format your response with these sections:
 
 If a section has no items, omit it entirely.`;
 
-async function reviewWithClaude(diff, prTitle, prAuthor) {
-  const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+async function reviewWithOpenAI(diff, prTitle, prAuthor) {
+  const client = new OpenAI({ apiKey: ANTHROPIC_API_KEY });
 
   const userMessage = `PR: "${prTitle}" by @${prAuthor}
 
@@ -160,17 +155,17 @@ ${diff}
 
 Please review this pull request diff and provide detailed feedback.`;
 
-  const response = await client.messages.create({
-    model: "gpt-4.1-mini",
+  const response = await client.chat.completions.create({
+    model: "gpt-4o-mini",
     max_tokens: 4096,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: userMessage }],
   });
 
-  return response.content[0].text;
+  return response.choices[0].message.content;
 }
 
-// ─── Main ──────────────────────────────────────────────────────────────────
+// ─── Main ───────────────────────────────────────────────────────────
 
 async function main() {
   console.log(`🤖 Starting Claude review for PR #${PR_NUMBER} in ${REPO}`);
@@ -186,9 +181,9 @@ async function main() {
     return;
   }
 
-  // Call Claude
-  console.log("🧠 Sending to Claude for review...");
-  const reviewText = await reviewWithClaude(diff, PR_TITLE, PR_AUTHOR);
+  // Call OpenAI
+  console.log("🧠 Sending to OpenAI for review...");
+  const reviewText = await reviewWithOpenAI(diff, PR_TITLE, PR_AUTHOR);
 
   // Delete previous bot review comments (on re-push)
   console.log("🗑️  Removing previous review comments...");
@@ -196,12 +191,12 @@ async function main() {
 
   // Post new comment
   const commentBody = `<!-- claude-ai-review -->
-## 🤖 Claude AI Code Review
+## 🤖 AI Code Review
 
 ${reviewText}
 
 ---
-<sub>Reviewed by Claude · ${new Date().toUTCString()} · [What is this?](https://docs.anthropic.com/)</sub>`;
+<sub>Reviewed by OpenAI · ${new Date().toUTCString()}</sub>`;
 
   console.log("💬 Posting review comment...");
   await postComment(commentBody);
