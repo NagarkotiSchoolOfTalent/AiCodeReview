@@ -127,7 +127,45 @@ function filterDiff(raw) {
       "\n\n[... diff truncated for length ...]"
       : joined;
 }
-
+ 
+// ─── Critical issue detection ──────────────────────────────────────────────
+// FIX: Broadened regex to catch all heading variations OpenAI may return:
+//   ## 🔴 Critical Issues
+//   ## Critical Issues
+//   ## 🔴Critical Issues
+//   ## Critical issues  (lowercase)
+ 
+function hasCriticalIssues(reviewText) {
+  console.log("🔍 Scanning review text for critical issues...");
+ 
+  // Match any heading that contains "critical" and "issue" in any form
+  // with or without the 🔴 emoji, case insensitive
+  const criticalSectionMatch = reviewText.match(
+    /##\s*(?:🔴\s*)?critical\s+issues?([\s\S]*?)(?=\n##|$)/i
+  );
+ 
+  if (!criticalSectionMatch) {
+    console.log("   No critical issues section found in review.");
+    return false;
+  }
+ 
+  const sectionContent = criticalSectionMatch[1].trim();
+  console.log(`   Critical section content length: ${sectionContent.length} chars`);
+  console.log(`   Critical section preview: ${sectionContent.substring(0, 100)}`);
+ 
+  // Section exists but is empty or explicitly says none
+  if (
+    sectionContent.length === 0 ||
+    /^(none|no critical issues?|n\/a)\.?$/i.test(sectionContent)
+  ) {
+    console.log("   Critical section is empty or says none.");
+    return false;
+  }
+ 
+  console.log("   ✅ Critical issues detected — merge will be BLOCKED.");
+  return true;
+}
+ 
 // ─── Claude review ────────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `You are an expert senior software engineer performing a thorough code review.
