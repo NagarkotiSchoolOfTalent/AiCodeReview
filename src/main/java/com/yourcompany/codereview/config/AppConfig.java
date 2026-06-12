@@ -29,7 +29,6 @@ public class AppConfig implements ApplicationRunner {
                 .build();
     }*/
 
-     */
     @Override
     public void run(ApplicationArguments args) {
         log.info("=== Claude AI Code Review Starting ===");
@@ -40,7 +39,7 @@ public class AppConfig implements ApplicationRunner {
         } 
          catch (Exception e) {
     log.error("=== Review failed: {} ===", e.getMessage(), e);
-    return e.getMessage(); // Exit with an error status
+   // return e.getMessage(); // Exit with an error status
 }
     }
 }
