@@ -133,7 +133,7 @@ function hasCriticalIssues(reviewText) {
   // there is meaningful content after it.
 
   // Find where "critical issue(s)" appears in the text (case insensitive)
-  const criticalIndex = reviewText.search(/criticals+issues?/i);
+  const criticalIndex = reviewText.search(/critical\s+issues?/i);
 
   if (criticalIndex === -1) {
     console.log("   'Critical Issues' phrase not found anywhere in review.");
