@@ -31,7 +31,16 @@ async function githubRequest(path, options = {}) {
     throw new Error(`GitHub API ${path} → ${res.status}: ${body}`);
   }
 
-  return res.json();
+  // FIX: Read as text first — res.json() throws on empty body (204 No Content
+  // from DELETE, or empty array "" on first PR with no comments yet)
+  const text = await res.text();
+  if (!text || text.trim() === "") return null;
+
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    throw new Error(`GitHub API ${path} → invalid JSON: "${text}"`);
+  }
 }
 
 async function getDiff() {
@@ -49,25 +58,39 @@ async function getDiff() {
 
 async function postComment(body) {
   return githubRequest(
-    `/repos/${OWNER}/${REPO_NAME}/issues/${PR_NUMBER}/comments`,
-    { method: "POST", body: JSON.stringify({ body }) }
+      `/repos/${OWNER}/${REPO_NAME}/issues/${PR_NUMBER}/comments`,
+      { method: "POST", body: JSON.stringify({ body }) }
   );
 }
 
 async function deleteOldReviews() {
   const comments = await githubRequest(
-    `/repos/${OWNER}/${REPO_NAME}/issues/${PR_NUMBER}/comments`
+      `/repos/${OWNER}/${REPO_NAME}/issues/${PR_NUMBER}/comments`
   );
+
+  // FIX: Guard against null/empty — happens on first PR where no comments exist yet
+  if (!comments || !Array.isArray(comments)) {
+    console.log("No existing comments found — nothing to delete.");
+    return;
+  }
+
   const botComments = comments.filter(
-    (c) =>
-      c.user.type === "Bot" &&
-      c.body.includes("<!-- claude-ai-review -->")
+      (c) =>
+          c.user.type === "Bot" &&
+          c.body.includes("<!-- claude-ai-review -->")
   );
+
+  if (botComments.length === 0) {
+    console.log("No previous review comments to delete.");
+    return;
+  }
+
   for (const c of botComments) {
     await githubRequest(
-      `/repos/${OWNER}/${REPO_NAME}/issues/comments/${c.id}`,
-      { method: "DELETE" }
+        `/repos/${OWNER}/${REPO_NAME}/issues/comments/${c.id}`,
+        { method: "DELETE" }
     );
+    console.log(`🗑️  Deleted old review comment id=${c.id}`);
   }
 }
 
@@ -100,9 +123,9 @@ function filterDiff(raw) {
   });
   const joined = filtered.map((c) => `diff --git ${c}`).join("");
   return joined.length > MAX_DIFF_CHARS
-    ? joined.slice(0, MAX_DIFF_CHARS) +
-        "\n\n[... diff truncated for length ...]"
-    : joined;
+      ? joined.slice(0, MAX_DIFF_CHARS) +
+      "\n\n[... diff truncated for length ...]"
+      : joined;
 }
 
 // ─── Claude review ────────────────────────────────────────────────────────
@@ -145,11 +168,11 @@ Format your response with these sections:
 If a section has no items, omit it entirely.`;
 
 async function reviewWithOpenAI(diff, prTitle, prAuthor) {
-    if (!ANTHROPIC_API_KEY) {
+  if (!ANTHROPIC_API_KEY) {
     throw new Error("ANTHROPIC_API_KEY environment variable is not set");
   }
 
-  const client = new OpenAI({ 
+  const client = new OpenAI({
     apiKey: ANTHROPIC_API_KEY,
     timeout: 60000, // 60 second timeout
   });
@@ -175,7 +198,7 @@ Please review this pull request diff and provide detailed feedback.`;
     });
 
     // Validate response structure
-        console.log("✓ Received response from OpenAI");
+    console.log("✓ Received response from OpenAI");
 
     // Validate response structure
     if (!response) {
@@ -206,7 +229,7 @@ Please review this pull request diff and provide detailed feedback.`;
     console.error("🔴 OpenAI API Error");
     console.error(`   Error type: ${error.constructor.name}`);
     console.error(`   Message: ${error.message}`);
-    
+
     if (error.status) {
       console.error(`   Status code: ${error.status}`);
     }
