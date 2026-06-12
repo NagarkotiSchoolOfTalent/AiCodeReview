@@ -1,0 +1,39 @@
+name: Build                         # ← ai-code-review.yml listens for THIS exact name
+
+# Triggers on every PR raised or updated against main
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build (Java 17 / Maven)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      # Compile + run tests
+      # If this fails → workflow fails → AI review never triggers
+      - name: Build and Test with Maven
+        run: mvn clean package --no-transfer-progress

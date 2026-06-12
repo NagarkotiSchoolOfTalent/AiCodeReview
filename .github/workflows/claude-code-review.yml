@@ -1,6 +1,10 @@
 name: Claude AI Code Review
 
 on:
+  workflow_run:
+    workflows: [ "Build" ]            # ← must match name: in build.yml exactly
+    types: [ completed ]
+
   pull_request:
     types: [opened, synchronize, reopened]
 
